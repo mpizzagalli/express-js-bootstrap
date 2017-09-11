@@ -3,6 +3,7 @@ const express = require('express'),
   rollbar = require('rollbar'),
   morgan = require('morgan'),
   path = require('path'),
+  xAdmin = require('express-admin'),
   config = require('./config'),
   routes = require('./app/routes'),
   orm = require('./app/orm'),
@@ -22,10 +23,14 @@ const bodyParserUrlencodedConfig = () => ({
   limit: config.common.api.bodySizeLimit || DEFAULT_BODY_SIZE_LIMIT
 });
 
-const init = () => {
+const init = admin => {
   const app = express();
   const port = config.common.port || 8080;
   module.exports = app;
+
+  if (admin) {
+    app.use('/admin', admin);
+  }
 
   app.use('/docs', express.static(path.join(__dirname, 'docs')));
 
@@ -65,4 +70,16 @@ const init = () => {
     })
     .catch(console.log); // eslint-disable-line
 };
-init();
+
+const adminConfig = {
+  dpath: './express-admin-config/',
+  config: require('./express-admin-config/config.json'),
+  settings: require('./express-admin-config/settings.json'),
+  custom: require('./express-admin-config/custom.json'),
+  users: require('./express-admin-config/users.json')
+};
+
+xAdmin.init(adminConfig, (err, admin) => {
+  if (err) return console.log(err);
+  init(admin);
+});
